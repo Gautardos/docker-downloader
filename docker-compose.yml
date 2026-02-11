@@ -2,14 +2,9 @@ version: "3.8"
 
 services:
   downloader:
-    image: downloader-app
+    image: gautardos/downloader-app:latest
     container_name: downloader-container
-    
-    # équivalent de --network host
     network_mode: host
-    
-    # plus besoin de ports: car network_mode: host
-    # mais on garde la variable d'environnement 
     environment:
       - PORT=8000
     
@@ -20,10 +15,8 @@ services:
       - /music:/music
       - /nas:/nas
     
-    # optionnel mais souvent utile
     restart: unless-stopped
-    
-    # logging (optionnel mais recommandé)
+
     logging:
       driver: "json-file"
       options:
