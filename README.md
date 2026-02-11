@@ -36,7 +36,7 @@ A self-hosted media management platform built with Symfony & Python, packaged as
 
 ## � Installation (Docker)
 
-The application is distributed as a pre-built Docker image. No need to clone this repository to run it.
+The application is distributed as a pre-built Docker image.
 
 ### Prerequisites
 - **Docker** and **Docker Compose** installed on a Linux host.
