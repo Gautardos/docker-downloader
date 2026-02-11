@@ -11,8 +11,6 @@ services:
     volumes:
       - /home/gautard/downloader-app/var/home:/var/www/html/var/home
       - /home/gautard/downloader-app/var/storage:/var/www/html/var/storage
-      - /home/gautard/downloader/src:/var/www/html/src
-      - /home/gautard/downloader/templates:/var/www/html/templates
       - /downloads:/downloads
       - /music:/music
       - /nas:/nas

@@ -145,29 +145,14 @@ The music features require two independent Spotify configurations:
 
 The download engine needs a valid Spotify session stored as a `credentials.json` file.
 
-**Option A — From the UI (recommended):**
+**From the UI (recommended):**
 1. Go to **Settings**.
 2. Click the **⚡ Auth** button next to "JSON Credentials Path".
-3. Open Spotify on your phone/desktop and select the device named `Speaker <timestamp>` as output.
+3. Open Spotify on your phone/desktop and select the device named `Speaker <timestamp>` as output (you need to have both devices on the same wifi).
 4. The credentials file is generated, transformed, and stored automatically.
 
 > [!NOTE]
 > The ⚡ Auth button only appears when no credentials file exists at the configured path.
-
-**Option B — Manual (from inside the container):**
-```bash
-docker exec -it downloader-container bash
-export HOME='/var/www/html/var'
-cd /var/www/html/var
-/var/www/html/var/librespot-auth/target/release/librespot-auth --name "Speaker Manual"
-# → Select "Speaker Manual" in Spotify
-# → credentials.json is created in /var/www/html/var/
-```
-
-Then copy/transform the file to the expected path:
-```bash
-cp /var/www/html/var/credentials.json /var/www/html/var/home/.local/credentials.json
-```
 
 ---
 
@@ -220,6 +205,13 @@ var/storage/        → JSON data files (config, queue, history)
 var/home/           → Persistent home (Spotify credentials, archive)
 Dockerfile          → Container build definition
 supervisord.conf    → Process manager configuration
+```
+
+### Volume mapping explained
+```
+Host                                    → Container
+────────────────────────────────────────────────────────────────
+~/nas                                   → /nas (Base storage path for torrent downloads)
 ```
 
 ### CLI Scripts
