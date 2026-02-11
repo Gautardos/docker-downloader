@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  downloader:
+    image: downloader-app
+    container_name: downloader-container
+    
+    # équivalent de --network host
+    network_mode: host
+    
+    # plus besoin de ports: car network_mode: host
+    # mais on garde la variable d'environnement 
+    environment:
+      - PORT=8000
+    
+    volumes:
+      - /home/gautard/downloader-app/var/home:/var/www/html/var/home
+      - /home/gautard/downloader-app/var/storage:/var/www/html/var/storage
+      - /downloads:/downloads
+      - /music:/music
+      - /nas:/nas
+    
+    # optionnel mais souvent utile
+    restart: unless-stopped
+    
+    # logging (optionnel mais recommandé)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
