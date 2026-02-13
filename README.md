@@ -2,6 +2,8 @@
 
 A self-hosted media management platform built with Symfony & Python, packaged as a single Docker image. It handles video/torrent downloads via Alldebrid and provides a complete music pipeline — from Spotify search to tagged, organized files in your library.
 
+Project repo : https://github.com/Gautardos/downloader
+
 ---
 
 ## ✨ Features
