@@ -36,17 +36,21 @@ Project repo : https://github.com/Gautardos/downloader
 
 ---
 
-## � Installation (Docker)
+## 🐳 Installation (Docker)
 
 The application is distributed as a pre-built Docker image.
 
 ### Prerequisites
-- **Docker** and **Docker Compose** installed on a Linux host.
+- **Docker** and **Docker Compose** (v2) installed on your host.
 - An **Alldebrid** account (for video/torrent features).
 - A **Spotify** developer account (for music features).
 - Optionally, a **Grok** API key (for AI renaming and genre detection).
 
-### 1. Create the project directory
+---
+
+### 🐧 Linux
+
+#### 1. Create the project directory
 
 ```bash
 mkdir -p ~/downloader-app/var/home
@@ -56,9 +60,11 @@ mkdir -p ~/downloader-app/var/storage
 - `var/home/` — persistent home directory for the application (Spotify credentials, archive logs).
 - `var/storage/` — persistent application data (configuration, download queue, history).
 
-### 2. Modify `docker-compose.yml`
+#### 2. Modify `docker-compose.yml`
 
-### 3. Start the container
+Adapt the volume paths and environment variables to your setup (see the **Configuration** section below).
+
+#### 3. Start the container
 
 ```bash
 cd ~/downloader-app
@@ -67,7 +73,120 @@ docker compose up -d
 
 The application is now accessible at **`http://<your-ip>:8000`**.
 
-### 4. First login
+---
+
+### 🪟 Windows
+
+> [!IMPORTANT]
+> **`network_mode: host` requires Docker Desktop ≥ 4.34** (released October 2024).
+> It was available as a **beta** in versions 4.29 – 4.33 and had to be enabled manually.
+> It works only with **Linux containers** (the default mode in Docker Desktop).
+
+#### 1. Verify your Docker Desktop version
+
+Open Docker Desktop → **Settings → About** and check that the version is **4.34 or later**.
+
+If you are running an older version, either:
+- **Update Docker Desktop** from [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
+- Or skip `network_mode: host` and use port mapping instead (see *Alternative without host networking* below).
+
+#### 2. Enable host networking (Docker Desktop 4.29 – 4.33 only)
+
+If you are on a beta version (4.29 – 4.33), you must enable the feature manually:
+
+1. In Docker Desktop, go to **Settings → Resources → Network**.
+2. Check **"Enable host networking"**.
+3. Click **Apply & restart**.
+
+> [!NOTE]
+> From version **4.34+** the feature is enabled by default — no extra step needed.
+
+#### 3. Create the project directory
+
+Open **PowerShell** and run:
+
+```powershell
+# Create the project directory on your Windows drive
+mkdir -p "$HOME\downloader-app\var\home"
+mkdir -p "$HOME\downloader-app\var\storage"
+
+# Create directories for media output (adapt the drive letter to your setup)
+mkdir -p "D:\downloads"
+mkdir -p "D:\music"
+```
+
+> [!TIP]
+> You can place these directories on any drive. The paths above are examples — adapt them to your setup.
+
+#### 4. Write `docker-compose.yml`
+
+Create a `docker-compose.yml` file inside `%USERPROFILE%\downloader-app\` with Windows-style volume paths:
+
+```yaml
+version: "3.8"
+
+services:
+  downloader:
+    image: gautardos/downloader-app:latest
+    container_name: downloader-container
+    network_mode: host
+    environment:
+      - PORT=8000
+
+    volumes:
+      # Persistent app data (use your actual Windows paths)
+      - C:\Users\<YourUser>\downloader-app\var\home:/var/www/html/var/home
+      - C:\Users\<YourUser>\downloader-app\var\storage:/var/www/html/var/storage
+      # Media directories
+      - D:\downloads:/downloads
+      - D:\music:/music
+
+    restart: unless-stopped
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+> [!WARNING]
+> **Volume paths on Windows** use the full path with the drive letter (`C:\Users\...`).
+> Docker Desktop automatically converts them to the `/c/Users/...` format used by the Linux VM.
+> Make sure the directories exist **before** starting the container, or Docker will create them as root-owned directories and permissions may be incorrect.
+
+#### 5. Alternative without host networking (Docker Desktop < 4.29)
+
+If your Docker Desktop version does not support `network_mode: host`, replace it with an explicit port mapping:
+
+```yaml
+services:
+  downloader:
+    image: gautardos/downloader-app:latest
+    container_name: downloader-container
+    # network_mode: host          ← remove or comment out
+    ports:
+      - "8000:8000"               # ← use port mapping instead
+    environment:
+      - PORT=8000
+    # ... rest of the config unchanged
+```
+
+> [!CAUTION]
+> With port mapping, only the mapped port is accessible. If the application uses additional ports internally (e.g., for `librespot-auth`), those features may not work correctly without `network_mode: host`.
+
+#### 6. Start the container
+
+```powershell
+cd "$HOME\downloader-app"
+docker compose up -d
+```
+
+The application is now accessible at **`http://localhost:8000`**.
+
+---
+
+### 🔐 First login
 
 Open the application in your browser. The default credentials are:
 
@@ -184,7 +303,7 @@ Host                                    → Container
 
 ---
 
-## � How Alldebrid Works
+## 🔧 How Alldebrid Works
 
 The application is **not** a BitTorrent client. It delegates P2P downloads to the [Alldebrid](https://alldebrid.com) cloud service:
 
