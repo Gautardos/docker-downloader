@@ -1,24 +1,23 @@
 version: "3.8"
 
+# Reglages dans le fichier .env a cote de celui-ci (modele : .env.example).
+# Secrets de l'application (APP_SECRET...) : ${DATA_DIR}/.env.local, jamais dans ce depot.
 services:
   downloader:
-    image: gautardos/downloader-app:latest
+    image: gautardos/downloader-app:${IMAGE_TAG:-latest}
     container_name: downloader-container
     network_mode: host
     environment:
-      - PORT=8000
-    
+      - PORT=${PORT:-8000}
     volumes:
-      - /home/gautard/www/docker-downloader/var/home:/var/www/html/var/home
-      - /home/gautard/www/docker-downloader/var/storage:/var/www/html/var/storage
-      - /home/gautard/www/docker-downloader/var/db:/var/www/html/var/db #Remove on windows otherwise the search will be really slow
-      - /home/gautard/www/downloader/src:/var/www/html/src
-      - /home/gautard/Documents/downloads:/downloads
-      - /home/gautard/Documents/music:/music
-      - /home/gautard/Documents/storage:/nas
-    
+      - ${DATA_DIR:-./var}/.env.local:/var/www/html/.env.local:ro
+      - ${DATA_DIR:-./var}/db:/var/www/html/var/db
+      - ${DATA_DIR:-./var}/home:/var/www/html/var/home
+      - ${DATA_DIR:-./var}/storage:/var/www/html/var/storage
+      - ${DOWNLOADS_DIR:-./downloads}:/downloads
+      - ${MUSIC_DIR:-./music}:/music
+      - ${NAS_DIR:-./nas}:/nas
     restart: unless-stopped
-
     logging:
       driver: "json-file"
       options:
