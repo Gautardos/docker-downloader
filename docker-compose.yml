@@ -9,12 +9,13 @@ services:
       - PORT=8000
     
     volumes:
-      - /home/gautard/downloader-app/var/home:/var/www/html/var/home
-      - /home/gautard/downloader-app/var/storage:/var/www/html/var/storage
-      - /home/gautard/downloader-app/var/db:/var/www/html/var/db #Remove on windows otherwise the search will be really slow
-      - /downloads:/downloads
-      - /music:/music
-      - /nas:/nas
+      - /home/gautard/www/docker-downloader/var/home:/var/www/html/var/home
+      - /home/gautard/www/docker-downloader/var/storage:/var/www/html/var/storage
+      - /home/gautard/www/docker-downloader/var/db:/var/www/html/var/db #Remove on windows otherwise the search will be really slow
+      - /home/gautard/www/downloader/src:/var/www/html/src
+      - /home/gautard/Documents/downloads:/downloads
+      - /home/gautard/Documents/music:/music
+      - /home/gautard/Documents/storage:/nas
     
     restart: unless-stopped
 
