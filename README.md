@@ -335,7 +335,7 @@ docker compose pull
 docker compose up -d
 ```
 
-To pin a version, set `IMAGE_TAG=<version>` in `.env` before pulling. No manual migration is required between 2.x versions; coming from 1.x, see Upgrading from 1.x. Existing storage paths keep working.
+To pin a version, set `IMAGE_TAG=<version>` in `.env` before pulling. No manual migration is required between 2.x versions; coming from 1.x, see Upgrading from 1.x.
 
 To roll back, set the previous `IMAGE_TAG` and run the same commands.
 
