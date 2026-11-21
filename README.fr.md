@@ -62,12 +62,15 @@ cd ~/downloader-app
 ```bash
 mkdir -p var/{db,home,storage}
 mkdir -p downloads music nas
+sudo chown -R 1000:1000 var downloads music nas
 ```
 
 - `var/db/` — bases SQLite (recherche torrents, index d'automation).
 - `var/home/` — home persistant (credentials Spotify, archive Zotify).
 - `var/storage/` — configuration, file d'attente, historique, logs et caches.
 - `downloads/`, `music/`, `nas/` — points de montage médias. Adaptez-les à vos disques ou partages NFS/SMB.
+
+The application processes run as UID 1000 inside the container: data and media directories must be writable by that UID (on network shares, by the UID the share maps writes to).
 
 ### 3. Configurer `.env`
 
@@ -91,13 +94,14 @@ Utilisez une version explicite (par exemple `IMAGE_TAG=2.7.0`) pour un déploiem
 
 ### 4. Créer le secret applicatif
 
-Les secrets ne doivent jamais être stockés dans le fichier Compose ni dans `.env`. Créez `var/.env.local` :
+Les secrets ne doivent jamais être stockés dans le fichier Compose ni dans `.env`. Create this file before the first start: if it is missing, Docker creates a directory with that name instead. Créez `var/.env.local` :
 
 ```bash
 printf 'APP_ENV=prod\nAPP_DEBUG=0\nAPP_SECRET=%s\n' "$(openssl rand -hex 32)" > var/.env.local
+chmod 600 var/.env.local
 ```
 
-Il est monté en lecture seule sur `/var/www/html/.env.local`.
+Il est monté en lecture seule sur `/var/www/html/.env.local`. The file must be owned by UID 1000.
 
 ### 5. Démarrer le conteneur
 
@@ -248,7 +252,7 @@ services:
 | Mot de passe | `admin` |
 
 > [!TIP]
-> Modifiez-les immédiatement dans **Settings → App Security**.
+> Change these before exposing the application outside your LAN (it listens on all interfaces with network_mode: host). Put it behind a reverse proxy with HTTPS for remote access.
 
 ---
 
@@ -331,11 +335,27 @@ docker compose pull
 docker compose up -d
 ```
 
-Pour épingler une version, définissez `IMAGE_TAG=2.7.0` dans `.env` avant le pull. Aucune migration manuelle n'est nécessaire.
+Pour épingler une version, définissez `IMAGE_TAG=<version>` dans `.env` avant le pull. No manual migration is required between 2.x versions; coming from 1.x, see Upgrading from 1.x.
+
+To roll back, set the previous `IMAGE_TAG` and run the same commands.
+
+> [!NOTE]
+> With the legacy docker-compose v1, run `docker-compose down` before `docker-compose up -d` after a pull.
+
+### Upgrading from 1.x
+
+Use the Compose file from docker-downloader; stop mounting `src/` and `templates/` (the code is in the image); create `var/.env.local` (see above); give existing data to UID 1000 (`sudo chown -R 1000:1000 <DATA_DIR>`).
 
 ### Sauvegarde & restauration
 
 Sauvegardez `var/storage/`, `var/db/`, `var/home/` et `var/.env.local`. Le panneau **Settings → Backup & Restore** permet aussi d'exporter/importer la configuration sous forme de ZIP.
+
+---
+
+## 📝 Notes & limites
+
+- At startup the entrypoint enforces permissions on its data: `var/storage` 710, `var/storage/logs` 2750 (setgid), `*.log` 640, other files 600, `var/db` 700/600. To let an external log shipper read the logs, give `var/storage` and `var/storage/logs` a group it belongs to. Mounted media folders are never changed recursively: only their top level is adjusted when owned by root, and a refused change (network share) does not block startup.
+- If the host already runs Redis on `127.0.0.1:6379` (host networking), the application uses it for sessions instead of the bundled one.
 
 ---
 
