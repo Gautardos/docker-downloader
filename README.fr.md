@@ -302,10 +302,14 @@ Consultez le [README de l'application](https://github.com/Gautardos/downloader/b
 
 ```bash
 docker exec -it downloader-container cat /var/log/apache2_error.log
-docker exec -it downloader-container cat /var/log/worker.log
-docker exec -it downloader-container cat /var/log/automation_worker.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/worker.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/automation_worker.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/worker_error.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/automation_worker_error.log
 docker exec -it downloader-container cat /var/log/supervisord.log
 ```
+
+Les logs applicatifs sont dans `var/storage/logs/` et tournent à **5 Mo par fichier avec 5 sauvegardes**.
 
 ### Redémarrer les services
 

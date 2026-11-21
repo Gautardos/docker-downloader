@@ -62,12 +62,15 @@ cd ~/downloader-app
 ```bash
 mkdir -p var/{db,home,storage}
 mkdir -p downloads music nas
+sudo chown -R 1000:1000 var downloads music nas
 ```
 
 - `var/db/` — SQLite databases (torrent search, automation index).
 - `var/home/` — persistent home (Spotify credentials, Zotify archive).
 - `var/storage/` — configuration, queue, history, logs and caches.
 - `downloads/`, `music/`, `nas/` — media mounts. Adapt them to your disks or NFS/SMB shares.
+
+The application processes run as UID 1000 inside the container: data and media directories must be writable by that UID (on network shares, by the UID the share maps writes to).
 
 ### 3. Configure `.env`
 
@@ -91,13 +94,14 @@ Use an explicit version (for example `IMAGE_TAG=2.7.0`) for reproducible deploym
 
 ### 4. Create the application secret
 
-Secrets must never be stored in the Compose file or in `.env`. Create `var/.env.local`:
+Secrets must never be stored in the Compose file or in `.env`. Create this file before the first start: if it is missing, Docker creates a directory with that name instead. Create `var/.env.local`:
 
 ```bash
 printf 'APP_ENV=prod\nAPP_DEBUG=0\nAPP_SECRET=%s\n' "$(openssl rand -hex 32)" > var/.env.local
+chmod 600 var/.env.local
 ```
 
-It is mounted read-only at `/var/www/html/.env.local`.
+It is mounted read-only at `/var/www/html/.env.local`. The file must be owned by UID 1000.
 
 ### 5. Start the container
 
@@ -248,7 +252,7 @@ services:
 | Password | `admin` |
 
 > [!TIP]
-> Change these immediately in **Settings → App Security**.
+> Change these before exposing the application outside your LAN (it listens on all interfaces with network_mode: host). Put it behind a reverse proxy with HTTPS for remote access.
 
 ---
 
@@ -302,10 +306,14 @@ See the [application README](https://github.com/Gautardos/downloader/blob/main/R
 
 ```bash
 docker exec -it downloader-container cat /var/log/apache2_error.log
-docker exec -it downloader-container cat /var/log/worker.log
-docker exec -it downloader-container cat /var/log/automation_worker.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/worker.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/automation_worker.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/worker_error.log
+docker exec -it downloader-container cat /var/www/html/var/storage/logs/automation_worker_error.log
 docker exec -it downloader-container cat /var/log/supervisord.log
 ```
+
+Application logs live in `var/storage/logs/` and rotate at **5 MB per file with 5 backups**.
 
 ### Restart services
 
@@ -327,11 +335,27 @@ docker compose pull
 docker compose up -d
 ```
 
-To pin a version, set `IMAGE_TAG=2.7.0` in `.env` before pulling. No manual migration is required.
+To pin a version, set `IMAGE_TAG=<version>` in `.env` before pulling. No manual migration is required between 2.x versions; coming from 1.x, see Upgrading from 1.x. Existing storage paths keep working.
+
+To roll back, set the previous `IMAGE_TAG` and run the same commands.
+
+> [!NOTE]
+> With the legacy docker-compose v1, run `docker-compose down` before `docker-compose up -d` after a pull.
+
+### Upgrading from 1.x
+
+Use the Compose file from docker-downloader; stop mounting `src/` and `templates/` (the code is in the image); create `var/.env.local` (see above); give existing data to UID 1000 (`sudo chown -R 1000:1000 <DATA_DIR>`).
 
 ### Backup & restore
 
 Back up `var/storage/`, `var/db/`, `var/home/` and `var/.env.local`. The **Settings → Backup & Restore** panel can also export/import the configuration as a ZIP.
+
+---
+
+## 📝 Notes & Limits
+
+- At startup the entrypoint enforces permissions on its data: `var/storage` 710, `var/storage/logs` 2750 (setgid), `*.log` 640, other files 600, `var/db` 700/600. To let an external log shipper read the logs, give `var/storage` and `var/storage/logs` a group it belongs to. Mounted media folders are never changed recursively: only their top level is adjusted when owned by root, and a refused change (network share) does not block startup.
+- If the host already runs Redis on `127.0.0.1:6379` (host networking), the application uses it for sessions instead of the bundled one.
 
 ---
 
